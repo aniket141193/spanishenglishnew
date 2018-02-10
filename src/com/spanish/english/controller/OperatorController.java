@@ -145,6 +145,13 @@ public class OperatorController {
 	private static byte[] key;
 	private static SecretKeySpec secretKey;
 
+	@RequestMapping("/operatordashboard")
+	public String operatordashboard(HttpServletRequest request,
+			HttpServletResponse response, ModelMap model) {
+
+		return "operatordashboard";
+	}
+
 	@RequestMapping("/establishments")
 	public String establishmentOperator(HttpServletRequest request,
 			HttpServletResponse response, ModelMap model) {
@@ -774,7 +781,7 @@ public class OperatorController {
 		Set<MachineCollectionNew> machineColls = estaColl
 				.getMachineCollectionNew();
 		model.addAttribute("mcList", machineColls);
-		return "collectionEstablishmentDate";
+		return "machinecollectionlist";
 	}
 
 	@RequestMapping(value = "/newcollection")
@@ -947,8 +954,14 @@ public class OperatorController {
 
 		if (!isDone) {
 			model.addAttribute("machineId", machine.getId());
+			if (machine.getNickName() != null)
+				model.addAttribute("machinename", machine.getNickName());
+			else
+				model.addAttribute("machinename",
+						"Machine Id:" + machine.getId());
 			model.addAttribute("establishmentId", establishment.getId());
 			model.addAttribute("estaCollId", estaColl.getId());
+
 		}
 		return "machineCollectionCalculate";
 	}
@@ -966,7 +979,7 @@ public class OperatorController {
 
 		EstablishmentCollection estaColl = newCollectionServices
 				.getEstablishmentCollectionById(Long.parseLong(request
-						.getParameter("establishmentCollectionId")));
+						.getParameter("estaCollId")));
 
 		String startDateString = request.getParameter("startDate");
 		String endDateString = request.getParameter("endDate");
@@ -994,14 +1007,16 @@ public class OperatorController {
 		long output = outputCounterCurrent - machine.getMachineOutput();
 
 		long inputOutput = input - output;
-		double theoreticalCollection = inputOutput * machine.getCreditValue();
+		double theoreticalCollection = Math.round(inputOutput
+				* machine.getCreditValue());
 
 		// calculate final collection
 		double netTotal = realCollection - fails;
 
 		// calculate difference
 		double diffInCash = theoreticalCollection - netTotal;
-		double diffInPercentage = (diffInCash / theoreticalCollection) * 100;
+		double diffInPercentage = (Math.round(diffInCash
+				/ theoreticalCollection)) * 100;
 
 		MachineCollectionNew mcn = new MachineCollectionNew();
 
@@ -1030,7 +1045,7 @@ public class OperatorController {
 		mcn = newCollectionServices.getLastMachineCollectionNew();
 
 		// update machine
-		machine.setMachineOutput(inputCounterCurrent);
+		machine.setMachineInput(inputCounterCurrent);
 		machine.setMachineOutput(outputCounterCurrent);
 		machineServices.addOrUpdateMachine(machine);
 
@@ -1065,9 +1080,14 @@ public class OperatorController {
 			model.addAttribute("machineId", machine.getId());
 			model.addAttribute("establishmentId", establishment.getId());
 			model.addAttribute("estaCollId", estaColl.getId());
+			if (machine.getNickName() != null)
+				model.addAttribute("machinename", machine.getNickName());
+			else
+				model.addAttribute("machinename",
+						"Machine Id:" + machine.getId());
 			return "machineCollectionCalculate";
 		} else {
-
+			model.addAttribute("establishmentId", establishment.getId());
 			model.addAttribute("estaCollId", estaColl.getId());
 			return "establishmentCollectionCalculate";
 		}
@@ -1086,7 +1106,7 @@ public class OperatorController {
 
 		EstablishmentCollection estaColl = newCollectionServices
 				.getEstablishmentCollectionById(Long.parseLong(request
-						.getParameter("establishmentCollectionId")));
+						.getParameter("estaCollId")));
 
 		Establishment establishment = establishmentServices
 				.getEstablishmentById(Long.parseLong(request
@@ -1104,30 +1124,33 @@ public class OperatorController {
 						loggedOperator.getId(), establishment.getId());
 
 		// calculate other expenses
-		double adminOtherExpense = otherExpenses
-				* (otherExpense.getAdminValue() / 100);
+		double adminOtherExpense = Math.round(otherExpenses
+				* (otherExpense.getAdminValue() / 100));
 
-		double opOtherExpense = otherExpenses
-				* (otherExpense.getOperatorValue() / 100);
+		double opOtherExpense = Math.round(otherExpenses
+				* (otherExpense.getOperatorValue() / 100));
 
-		double estOtherExpense = otherExpenses
-				* (otherExpense.getEstablishmentValue() / 100);
+		double estOtherExpense = Math.round(otherExpenses
+				* (otherExpense.getEstablishmentValue() / 100));
 
 		PlayersGift playersGift = percentageDistributionServices
 				.getPlayersGift(establishment.getAdmin().getId(),
 						loggedOperator.getId(), establishment.getId());
 		// calculate players gift
-		double adminPlayersGift = playerGift
-				* (playersGift.getAdminValue() / 100);
+		double adminPlayersGift = Math.round(playerGift
+				* (playersGift.getAdminValue() / 100));
 
-		double opPlayersGift = playerGift
-				* (playersGift.getOperatorValue() / 100);
+		double opPlayersGift = Math.round(playerGift
+				* (playersGift.getOperatorValue() / 100));
 
-		double estPlayersGift = playerGift
-				* (playersGift.getEstablishmentValue() / 100);
+		double estPlayersGift = Math.round(playerGift
+				* (playersGift.getEstablishmentValue() / 100));
 
 		Set<TempMachine> tempMachineList = tempMachineServices
 				.getTempMachineListByEstablishment(establishment);
+		for (TempMachine tempMachine : tempMachineList) {
+			tempMachineServices.deleteTempMachine(tempMachine);
+		}
 
 		double adminAgreedPercentages = 0;
 		double opAgreedPercentages = 0;
@@ -1139,35 +1162,45 @@ public class OperatorController {
 							.getMachine().getId());
 			for (AgreedPercentage agreedPercentage : agreedPercentageList) {
 				if (agreedPercentage.getRole().equals("admin")) {
-					double adminAgreedPercentage = machineCollectionNew
-							.getNetTotal() * agreedPercentage.getValue() / 100;
+					double adminAgreedPercentage = Math
+							.round(machineCollectionNew.getNetTotal()
+									* (agreedPercentage.getValue() / 100));
 					adminAgreedPercentages = adminAgreedPercentages
 							+ adminAgreedPercentage;
 				}
 				if (agreedPercentage.getRole().equals("op")) {
-					double opAgreedPercentage = machineCollectionNew
-							.getNetTotal() * agreedPercentage.getValue() / 100;
+					double opAgreedPercentage = Math.round(machineCollectionNew
+							.getNetTotal()
+							* (agreedPercentage.getValue() / 100));
 					opAgreedPercentages = opAgreedPercentages
 							+ opAgreedPercentage;
 				}
 				if (agreedPercentage.getRole().equals("est")) {
-					double estAgreedPercentage = machineCollectionNew
-							.getNetTotal() * agreedPercentage.getValue() / 100;
+					double estAgreedPercentage = Math
+							.round(machineCollectionNew.getNetTotal()
+									* (agreedPercentage.getValue() / 100));
 					estAgreedPercentages = estAgreedPercentages
 							+ estAgreedPercentage;
 				}
 			}
 		}
-		estaColl.setAdminShare(adminAgreedPercentages
-				- (adminPlayersGift + adminOtherExpense));
+		double adminPGOexp = adminPlayersGift + adminOtherExpense;
+		estaColl.setAdminShare(adminAgreedPercentages - adminPGOexp);
 
-		estaColl.setEstablishmentShare(estOtherExpense
-				- (opPlayersGift + opOtherExpense));
+		double estaPGOexp = estPlayersGift + estOtherExpense;
+		estaColl.setEstablishmentShare(estAgreedPercentages - estaPGOexp);
 
-		estaColl.setOperatorShare(opAgreedPercentages
-				- (estPlayersGift + estOtherExpense));
+		double opPGOexp = opPlayersGift + opOtherExpense;
+		estaColl.setOperatorShare(opAgreedPercentages - opPGOexp);
 
-		return null;
+		newCollectionServices.addOrUpdateEstablishmentCollection(estaColl);
+
+		Set<EstablishmentCollection> estaColls = newCollectionServices
+				.getEstablishmentCollectionByEstablishmentIdAndOperatorId(
+						establishment.getId(), loggedOperator.getId());
+		model.addAttribute("establishmentId", establishment.getId());
+		model.addAttribute("collections", estaColls);
+		return "collectionEstablishment";
 	}
 
 	@RequestMapping(value = "/machinecollectionestablishment")

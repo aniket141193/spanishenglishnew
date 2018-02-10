@@ -120,6 +120,7 @@ public class NewCollectionDaoImpl implements NewCollectionDao {
 		return machine;
 	}
 
+	@Transactional(propagation = Propagation.REQUIRED, readOnly = false)
 	@Override
 	public EstablishmentCollection getLastEstablishmentCollection() {
 		Session session = sessionFactory.openSession();
@@ -130,6 +131,7 @@ public class NewCollectionDaoImpl implements NewCollectionDao {
 		return result;
 	}
 
+	@Transactional(propagation = Propagation.REQUIRED, readOnly = false)
 	@Override
 	public MachineCollectionNew getLastMachineCollectionNew() {
 		Session session = sessionFactory.openSession();
@@ -138,6 +140,42 @@ public class NewCollectionDaoImpl implements NewCollectionDao {
 				.setMaxResults(1).uniqueResult();
 		session.close();
 		return result;
+	}
+
+	@Transactional(propagation = Propagation.REQUIRED, readOnly = false)
+	@Override
+	public List<MachineCollectionNew> getMachineCollectionNewByMachine(
+			long machineId) {
+		session = sessionFactory.openSession();
+		tx = session.beginTransaction();
+
+		Criteria c = session.createCriteria(MachineCollectionNew.class);
+		c.createAlias("machine", "m");
+		c.add(Restrictions.eq("m.id", machineId));
+
+		List<MachineCollectionNew> list = c.list();
+
+		tx.commit();
+		session.close();
+		return list;
+	}
+
+	@Override
+	public boolean deleteMachineCollectionNew(long id) {
+		boolean flag = true;
+		try {
+			session = sessionFactory.openSession();
+			Object o = session.load(MachineCollectionNew.class, id);
+			tx = session.getTransaction();
+			session.beginTransaction();
+			session.delete(o);
+			tx.commit();
+		} catch (Exception e) {
+			flag = false;
+			e.printStackTrace();
+		}
+		return flag;
+
 	}
 
 }

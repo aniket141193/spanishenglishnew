@@ -6,6 +6,7 @@ import java.util.Set;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
@@ -51,7 +52,7 @@ public class EstablishmentCollection implements Serializable {
 	@ManyToOne
 	private Admin admin;
 
-	@OneToMany(targetEntity = MachineCollectionNew.class, mappedBy = "establishmentCollection")
+	@OneToMany(fetch = FetchType.EAGER, targetEntity = MachineCollectionNew.class, mappedBy = "establishmentCollection")
 	private Set<MachineCollectionNew> machineCollectionNew;
 
 	public long getId() {

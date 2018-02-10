@@ -42,6 +42,7 @@ import com.spanish.english.form.InputMoneyHopperForm;
 import com.spanish.english.form.InputMoneyPaymentDevice;
 import com.spanish.english.form.Machine;
 import com.spanish.english.form.MachineAccountingMovement;
+import com.spanish.english.form.MachineCollectionNew;
 import com.spanish.english.form.MachineHistory;
 import com.spanish.english.form.MachinePercentageMapping;
 import com.spanish.english.form.MachineProblems;
@@ -87,6 +88,7 @@ import com.spanish.english.services.MachineHistoryServices;
 import com.spanish.english.services.MachineProblemsServices;
 import com.spanish.english.services.MachineServices;
 import com.spanish.english.services.MachineTypeServices;
+import com.spanish.english.services.NewCollectionServices;
 import com.spanish.english.services.NotesServices;
 import com.spanish.english.services.OperatorServices;
 import com.spanish.english.services.OutputMoneyHopperServices;
@@ -198,6 +200,9 @@ public class AdminController {
 
 	@Autowired
 	MachineHistoryServices machineHistoryServices;
+
+	@Autowired
+	NewCollectionServices newCollectionServices;
 
 	public static HashMap<String, Long> machineTypeMap = new HashMap<String, Long>();
 
@@ -1119,6 +1124,14 @@ public class AdminController {
 						.deleteAgreedPercentage(agreedPercentage.getId());
 			}
 
+			List<MachineCollectionNew> mcList = newCollectionServices
+					.getMachineCollectionNewByMachine(id);
+			for (MachineCollectionNew machineCollectionNew : mcList) {
+				newCollectionServices
+						.deleteMachineCollectionNew(machineCollectionNew
+								.getId());
+			}
+
 			machineServices.deleteMachine(id);
 
 		}
@@ -1159,7 +1172,7 @@ public class AdminController {
 		Set<AgreedPercentage> apList = percentageDistributionServices
 				.getAgreedPercentageByMachine(machine.getId());
 
-		if (operatorIdStr.equals("0")) {
+		if (!operatorIdStr.equals("0")) {
 
 			if (machine.getOperator() != null) {
 				isOperator = true;
@@ -1199,7 +1212,7 @@ public class AdminController {
 
 		}
 
-		if (establishmentIdStr.equals("0")) {
+		if (!establishmentIdStr.equals("0")) {
 			if (machine.getEstablishment() != null) {
 				isEstablishment = true;
 				machine.setEstablishment(null);

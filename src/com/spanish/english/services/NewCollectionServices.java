@@ -1,5 +1,6 @@
 package com.spanish.english.services;
 
+import java.util.List;
 import java.util.Set;
 
 import com.spanish.english.form.EstablishmentCollection;
@@ -19,6 +20,10 @@ public interface NewCollectionServices {
 	boolean addOrUpdateMachineCollectionNew(MachineCollectionNew machineColl);
 
 	MachineCollectionNew getMachineCollectionNewById(long id);
-	
+
 	MachineCollectionNew getLastMachineCollectionNew();
+
+	List<MachineCollectionNew> getMachineCollectionNewByMachine(long machineId);
+
+	boolean deleteMachineCollectionNew(long id);
 }

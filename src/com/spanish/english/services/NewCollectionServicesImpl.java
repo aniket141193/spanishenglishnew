@@ -1,5 +1,6 @@
 package com.spanish.english.services;
 
+import java.util.List;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,6 +57,17 @@ public class NewCollectionServicesImpl implements NewCollectionServices {
 	@Override
 	public MachineCollectionNew getLastMachineCollectionNew() {
 		return newCollectionDao.getLastMachineCollectionNew();
+	}
+
+	@Override
+	public List<MachineCollectionNew> getMachineCollectionNewByMachine(
+			long machineId) {
+		return newCollectionDao.getMachineCollectionNewByMachine(machineId);
+	}
+
+	@Override
+	public boolean deleteMachineCollectionNew(long id) {
+		return newCollectionDao.deleteMachineCollectionNew(id);
 	}
 
 }
